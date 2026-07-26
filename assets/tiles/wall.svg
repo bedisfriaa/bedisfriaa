@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" role="img" aria-label="wall">
-<style><![CDATA[:root{--panel:#f6f8fa;--line:#d0d7de;--muted:#656d76}@media(prefers-color-scheme:dark){:root{--panel:#161b22;--line:#30363d;--muted:#8b949e}}]]></style>
-<rect x="1" y="1" width="38" height="38" rx="2" fill="var(--line)"/>
-<path d="M1 13.5h38M1 26.5h38M20.5 1.5v12M9.5 13.5v13M30.5 13.5v13M20.5 26.5v12" fill="none" stroke="var(--panel)" stroke-width="1"/>
-<rect x="1.5" y="1.5" width="37" height="37" rx="1.5" fill="none" stroke="var(--muted)" stroke-width="1" opacity=".35"/>
-</svg>
