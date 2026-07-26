@@ -1,0 +1,82 @@
+# Nightly stats card generator for the bedisfriaa/bedisfriaa profile repo.
+#
+# Regenerates assets/stats.svg from live GitHub data and commits it back
+# to the repo when (and only when) the rendered output actually changed.
+name: Regenerate stats card
+
+on:
+  schedule:
+    # 03:40 UTC — off-peak, low-traffic slot for GitHub's scheduler.
+    # NOTE: GitHub Actions `schedule` triggers are best-effort. During periods
+    # of high load, GitHub may delay or occasionally skip a scheduled run —
+    # do not treat this cron as a hard real-time guarantee. Use
+    # `workflow_dispatch` below to trigger a run manually if a scheduled run
+    # is late or you need an immediate refresh.
+    - cron: "40 3 * * *"
+  # Allows triggering a run by hand from the Actions tab, or via the API/CLI.
+  workflow_dispatch: {}
+
+# Prevent overlapping runs from racing each other on the same branch — if a
+# new run starts (e.g. a manual dispatch while the nightly run is still
+# going), cancel the in-flight one rather than let both try to commit.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  # The workflow commits the regenerated SVG back to the repo.
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Render stats.svg
+        # IMPORTANT: this intentionally uses a dedicated `STATS_TOKEN` secret,
+        # NOT the workflow's built-in `secrets.GITHUB_TOKEN`. The built-in
+        # token is scoped to this single repo, so it cannot read the owner's
+        # OTHER (including private) repos to compute stats across them.
+        #
+        # `STATS_TOKEN` should be a fine-grained personal access token (PAT)
+        # created under the repo owner's account, scoped to:
+        #   - Resource owner: the account whose stats are being rendered
+        #   - Repository access: all repos the stats should cover
+        #   - Permissions: read-only "Metadata" and read-only "Contents"
+        # No write scopes are needed by the token itself — this job writes
+        # back to the repo using the default checkout credentials, not this
+        # token.
+        #
+        # If the script errors, this step fails and the job fails loudly —
+        # errors here are never swallowed.
+        run: node scripts/render-stats.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.STATS_TOKEN }}
+
+      - name: Commit stats.svg if changed
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add assets/stats.svg
+
+          # `git diff --quiet` (staged) exits 1 if there are staged changes,
+          # 0 if there are none. Use that to skip cleanly when the rendered
+          # SVG is byte-for-byte identical to what's already committed —
+          # this is a normal, successful outcome, not an error.
+          if git diff --cached --quiet; then
+            echo "No changes to assets/stats.svg — nothing to commit."
+            exit 0
+          fi
+
+          git commit -m "chore: regenerate stats.svg [skip ci]"
+          git push
