@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" role="img" aria-label="your mark">
-<style><![CDATA[:root{--panel:#f6f8fa;--fg:#1f2328}@media(prefers-color-scheme:dark){:root{--panel:#161b22;--fg:#e6edf3}}]]></style>
-<rect x="1" y="1" width="38" height="38" rx="2" fill="var(--panel)"/>
-<path d="M13 13l14 14M27 13L13 27" fill="none" stroke="var(--fg)" stroke-width="2.25" stroke-linecap="round"/>
-</svg>
