@@ -1,18 +1,48 @@
-# 💫 About Me:
-just a dev
+# Friaa Bedis
 
+I build full-stack products and the automation that feeds them. Started April 2026.
 
-# 💻 Tech Stack:
-![HTML5](https://img.shields.io/badge/html5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white) ![CSS3](https://img.shields.io/badge/css3-%231572B6.svg?style=for-the-badge&logo=css3&logoColor=white) ![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E) ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white) ![MySQL](https://img.shields.io/badge/mysql-4479A1.svg?style=for-the-badge&logo=mysql&logoColor=white) ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white) ![PHP](https://img.shields.io/badge/php-%23777BB4.svg?style=for-the-badge&logo=php&logoColor=white) ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) ![DigitalOcean](https://img.shields.io/badge/DigitalOcean-%230167ff.svg?style=for-the-badge&logo=digitalOcean&logoColor=white) ![Vercel](https://img.shields.io/badge/vercel-%23000000.svg?style=for-the-badge&logo=vercel&logoColor=white) ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi) ![Next JS](https://img.shields.io/badge/Next-black?style=for-the-badge&logo=next.js&logoColor=white) ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white) ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB) ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white) ![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white) ![Pandas](https://img.shields.io/badge/pandas-%23150458.svg?style=for-the-badge&logo=pandas&logoColor=white) ![Git](https://img.shields.io/badge/git-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white) ![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white) ![Playwright](https://img.shields.io/badge/-playwright-%232EAD33?style=for-the-badge&logo=playwright&logoColor=white) ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white) ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=Prometheus&logoColor=white) ![Grafana](https://img.shields.io/badge/grafana-%23F46800.svg?style=for-the-badge&logo=grafana&logoColor=white)
-# 📊 GitHub Stats:
-![](https://github-readme-stats.shion.dev/api?username=bedisfriaa&theme=dark&hide_border=false&include_all_commits=true&count_private=true)<br/>
-![](https://streak-stats.demolab.com/?user=bedisfriaa&theme=dark&hide_border=false)<br/>
-![](https://github-readme-stats.shion.dev/api/top-langs/?username=bedisfriaa&theme=dark&hide_border=false&include_all_commits=true&count_private=true&layout=compact)
+![](./assets/architecture.svg)
 
-## 🏆 GitHub Trophies
-![](https://github-profile-trophy.vercel.app/?username=bedisfriaa&theme=radical&no-frame=false&no-bg=true&margin-w=4)
+## What I build
 
----
-[![](https://komarev.com/ghpvc/?username=bedisfriaa&icon=0&color=0)](https://visitcount.itsvg.in)
+Most of my time goes into RevFlowLab, a multi-tenant marketing platform on Next.js, TypeScript and Supabase. Tenant isolation lives in Postgres row-level security rather than in application checks, so a missed `where` clause in a route cannot leak another tenant's rows. It is deployed. It has no users yet. Around it sits the machinery that feeds it: a Python acquisition engine that escalates through five tiers of evasion, an email warming system that derives sending caps from live inbox and spam rates, and an LLM evaluation pipeline that refuses to act on a single negative signal.
 
-<!-- Proudly created with GPRM ( https://gprm.itsvg.in ) -->
+I work alone, so I bias toward systems that fail loudly and recover without me: locks that survive a crashed process, proxy sessions retired on a predicted ban instead of an observed one, migrations and tests as the only contract I trust. Two repos are Rust and I am learning it in public — bastion is a study of a problem space, not a finished system, and I would rather say that than round it up.
+
+![](./assets/stats.svg)
+
+## Systems
+
+| Project | What it is | The hard part |
+| --- | --- | --- |
+| **revflowlab** | Multi-tenant marketing platform. Next.js, TypeScript, Supabase. | 352 API routes, 225 migrations, 4,667 tests. Tenant isolation enforced by Postgres RLS, not application checks. |
+| **hunter / scraper_core** | Adversarial web acquisition engine. | Five-tier escalation ladder that starts at a *predicted* tier from a learned per-domain difficulty model. Hand-built cursor humanization: Bézier paths, tremor, overshoot-and-correct. Proxy sessions retired before a ban, not after. |
+| **warming** | Email deliverability infrastructure. | Day-based warming ramp, health-scored sending caps derived from live inbox/spam rate, IMAP engagement simulation. |
+| **critique-agent** | LLM evaluation pipeline. LangGraph, Anthropic Batches API. | A confirmation-threshold gate that refuses to promote a "the model was wrong" signal until N independent confirmations — so client preference is never mistaken for miscalibration. |
+| **bastion** | Rust workspace, 9 crates, 181 tests. Hybrid retrieval over vector, lexical and graph indices with per-tenant envelope encryption. | Built to learn the problem space. The TEE layer is simulated and the WAL is in-memory — both phase-0. |
+| **polar-hands** | Rust, 6,800 LOC, 107 tests. OS-level input actuation. | A crash-safe FIFO lock with TTL heartbeat, so a dead session cannot deadlock the queue. |
+
+## Stack
+
+**Product**
+TypeScript, Next.js, React, Tailwind, Supabase / Postgres, Vitest
+
+**Automation**
+Python, patchright, curl_cffi, FastAPI, residential proxy orchestration
+
+**Systems**
+Rust (learning in the open), SQLite, RocksDB
+
+**Infrastructure**
+Docker, GitHub Actions, Vercel, DigitalOcean, AWS SES
+
+## Foundations
+
+Before April 2026 my base was web foundations only — HTML, CSS, JavaScript, PHP, MySQL. First commit 2026-04-25; everything above is what came after. The counts in the card are generated nightly from the API, not typed by hand.
+
+## Contact
+
+GitHub: [@bedisfriaa](https://github.com/bedisfriaa)
+
+<!-- TODO: add email and personal site here once decided -->

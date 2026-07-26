@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" width="100%" role="img" aria-label="GitHub statistics">
+<title>2,662 commits across 9 repositories in 92 days</title>
+<style><![CDATA[
+:root{--fg:#1f2328;--muted:#656d76;--line:#d0d7de;--accent:#b8622f}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#8b949e;--line:#30363d;--accent:#e8944f}}
+text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace}
+.fig{font-size:34px;font-weight:600;fill:var(--fg);letter-spacing:-0.02em}
+.cap{font-size:10px;fill:var(--muted);letter-spacing:0.14em}
+.lang{font-size:12px;fill:var(--fg)}
+.pct{font-size:12px;fill:var(--muted)}
+.foot{font-size:10px;fill:var(--muted);letter-spacing:0.08em}
+.rule{stroke:var(--line);stroke-width:1}
+.track{fill:var(--line)}
+.bar{fill:var(--accent);transform-box:fill-box;transform-origin:left center;animation:draw 760ms cubic-bezier(.22,.68,.28,1) both}
+.stat{animation:rise 620ms cubic-bezier(.22,.68,.28,1) both}
+.f0{animation-delay:0ms}.f1{animation-delay:120ms}.f2{animation-delay:240ms}
+.b0{animation-delay:320ms}.b1{animation-delay:440ms}.b2{animation-delay:560ms}.b3{animation-delay:680ms}
+@keyframes draw{from{transform:scaleX(.001)}to{transform:scaleX(1)}}
+@keyframes rise{from{opacity:.001;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){.bar,.stat{animation:none}}
+]]></style>
+<g class="stat f0"><text class="fig" x="40" y="82">2,662</text><text class="cap" x="40" y="98">COMMITS</text></g><g class="stat f1"><text class="fig" x="40" y="134">9</text><text class="cap" x="40" y="150">REPOSITORIES</text></g><g class="stat f2"><text class="fig" x="40" y="186">92</text><text class="cap" x="40" y="202">DAYS BUILDING</text></g>
+<line class="rule" x1="430" y1="44" x2="430" y2="212"/>
+<g><text class="lang" x="470" y="62">TypeScript</text><text class="pct" x="860" y="62" text-anchor="end">58.2%</text><rect class="track" x="470" y="70" width="390" height="6" rx="3"/><rect class="bar b0" x="470" y="70" width="226.95" height="6" rx="3"/></g><g><text class="lang" x="470" y="106">Python</text><text class="pct" x="860" y="106" text-anchor="end">23.1%</text><rect class="track" x="470" y="114" width="390" height="6" rx="3"/><rect class="bar b1" x="470" y="114" width="89.93" height="6" rx="3"/></g><g><text class="lang" x="470" y="150">PLpgSQL</text><text class="pct" x="860" y="150" text-anchor="end">10.4%</text><rect class="track" x="470" y="158" width="390" height="6" rx="3"/><rect class="bar b2" x="470" y="158" width="40.56" height="6" rx="3"/></g><g><text class="lang" x="470" y="194">Rust</text><text class="pct" x="860" y="194" text-anchor="end">5.1%</text><rect class="track" x="470" y="202" width="390" height="6" rx="3"/><rect class="bar b3" x="470" y="202" width="19.97" height="6" rx="3"/></g>
+<line class="rule" x1="40" y1="228" x2="860" y2="228"/>
+<text class="foot" x="40" y="246">generated 2026-07-26</text>
+</svg>
