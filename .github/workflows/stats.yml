@@ -49,7 +49,15 @@ jobs:
         # created under the repo owner's account, scoped to:
         #   - Resource owner: the account whose stats are being rendered
         #   - Repository access: all repos the stats should cover
-        #   - Permissions: read-only "Metadata" and read-only "Contents"
+        #   - Permissions: read-only "Metadata" — and NOTHING else.
+        #
+        # Deliberately NOT "Contents". Contents: Read would let this token
+        # read the source of every private repo, and a stats card has no
+        # business holding that. The script therefore never calls /commits
+        # (the only endpoint that needed Contents); the contribution total
+        # comes from the public profile via GraphQL, and the repo list and
+        # language split need Metadata alone.
+        #
         # No write scopes are needed by the token itself — this job writes
         # back to the repo using the default checkout credentials, not this
         # token.

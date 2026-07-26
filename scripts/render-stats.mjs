@@ -1,15 +1,51 @@
 #!/usr/bin/env node
 /**
- * render-stats.mjs — true commit stats across PRIVATE repos → assets/stats.svg
+ * render-stats.mjs — profile stats card → assets/stats.svg
  *
- * Why REST pagination instead of `contributionsCollection`:
- *   contributionsCollection returns 0 across the board for this account
- *   ("Include private contributions on my profile" is off, every repo private).
- *   `GET /repos/{o}/{r}/commits?per_page=1&author={login}` + the `Link: rel="last"`
- *   header is ground truth and independent of any profile privacy setting.
+ * ┌─ PERMISSION CONTRACT ────────────────────────────────────────────────────┐
+ * │ Runs on a fine-grained PAT carrying ONLY `Metadata: Read`.               │
+ * │ It must never need `Contents: Read` — that permission would let this     │
+ * │ token read the SOURCE of every private repo, which is absurd access for  │
+ * │ a stats card. Every data source below is chosen to stay inside Metadata. │
+ * └──────────────────────────────────────────────────────────────────────────┘
+ *
+ * Endpoint → permission audit. This script makes exactly THREE kinds of
+ * request. Keep this list in sync with the code; if a fourth appears, justify
+ * it here first.
+ *
+ *   1. POST /graphql
+ *      user(login).contributionsCollection.contributionCalendar.totalContributions
+ *      → NO repository permission. This is public profile data — the same
+ *        number on the profile contribution graph, visible to anonymous
+ *        visitors. The token only satisfies GraphQL's "be authenticated"
+ *        rule. It includes private work because the account has "Include
+ *        private contributions on my profile" enabled. Note it is queried
+ *        via `user(login:)`, NOT `viewer`, precisely so it stays public data.
+ *
+ *   2. GET /user/repos?affiliation=owner
+ *      → Metadata: Read. Listed under "Repository permissions for Metadata"
+ *        in GitHub's fine-grained-PAT permission reference.
+ *
+ *   3. GET /repos/{owner}/{repo}/languages
+ *      → Metadata: Read. Also listed under "Repository permissions for
+ *        Metadata" in that same reference — NOT under Contents. The endpoint
+ *        returns only the byte breakdown GitHub computed at index time; no
+ *        file content, no tree, no diff, which is why it is metadata-gated.
+ *
+ * Deliberately ABSENT: `GET /repos/{owner}/{repo}/commits`. The permission
+ * reference lists it under "Repository permissions for Contents" — read
+ * access to the source of every private repo. That is exactly the access
+ * this rewrite removes, and it is why FIRST_COMMIT below is a hard-coded
+ * constant: deriving the first-commit date from the API would drag
+ * Contents: Read straight back in for the sake of one unchanging date.
+ *
+ * Also deliberately absent: `GET /user`. It was only ever used to print the
+ * token's login, and it is the one endpoint whose fine-grained permission
+ * could not be confirmed from the reference — so it is gone rather than
+ * left as an unverified claim.
  *
  * Node 20+ ESM. No dependencies — global fetch only.
- * Auth: process.env.GITHUB_TOKEN (fine-grained PAT: metadata + contents, read-only).
+ * Auth: process.env.GITHUB_TOKEN
  */
 
 import { writeFile, mkdir } from 'node:fs/promises';
@@ -19,9 +55,22 @@ import { fileURLToPath } from 'node:url';
 // ---------------------------------------------------------------- config ----
 
 const API = 'https://api.github.com';
+const GRAPHQL = 'https://api.github.com/graphql';
 const UA = 'bedisfriaa-profile-stats';
 const CONCURRENCY = 8;
 const TOP_LANGUAGES = 4;
+
+/**
+ * First commit on the account, verified once from the commit record.
+ * It is a historical fact: it never changes, so it does not need to be a
+ * live lookup — and making it one would require `Contents: Read` on every
+ * repo just to read a date. Hard-coding it is what keeps this script inside
+ * the Metadata-only permission budget.
+ */
+const FIRST_COMMIT = '2026-04-25'; // verified from the commit record; never changes
+
+/** Profile whose PUBLIC contribution calendar is read. */
+const PROFILE_LOGIN = process.env.GITHUB_LOGIN || 'bedisfriaa';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
@@ -32,24 +81,25 @@ if (!TOKEN) {
   console.error(
     'render-stats: GITHUB_TOKEN is not set.\n' +
       '  Local:  GITHUB_TOKEN="$(gh auth token)" node scripts/render-stats.mjs\n' +
-      '  Action: env: { GITHUB_TOKEN: ${{ secrets.STATS_TOKEN }} }',
+      '  Action: env: { GITHUB_TOKEN: ${{ secrets.STATS_TOKEN }} }\n' +
+      '  Token:  fine-grained PAT, Metadata: Read only. Contents is NOT needed.',
   );
   process.exit(1);
 }
+
+const HEADERS = {
+  Authorization: `Bearer ${TOKEN}`,
+  Accept: 'application/vnd.github+json',
+  'X-GitHub-Api-Version': '2022-11-28',
+  'User-Agent': UA,
+};
 
 // ------------------------------------------------------------- api client ---
 
 /** @returns {Promise<{ res: Response, body: any }>} */
 async function gh(path, { allowStatus = [] } = {}) {
   const url = path.startsWith('http') ? path : `${API}${path}`;
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      'User-Agent': UA,
-    },
-  });
+  const res = await fetch(url, { headers: HEADERS });
 
   if (!res.ok && !allowStatus.includes(res.status)) {
     const detail = await res.text().catch(() => '');
@@ -62,14 +112,47 @@ async function gh(path, { allowStatus = [] } = {}) {
   return { res, body };
 }
 
-/** Pull `page=N` out of the `Link: <...>; rel="last"` header. 0 if absent. */
-function lastPageFromLink(linkHeader) {
-  if (!linkHeader) return 0;
-  const m = linkHeader.match(/<([^>]+)>\s*;\s*rel="last"/);
-  if (!m) return 0;
-  const page = new URL(m[1]).searchParams.get('page');
-  const n = Number(page);
-  return Number.isFinite(n) ? n : 0;
+/** POST a GraphQL query. Throws on transport errors AND on `errors[]`. */
+async function graphql(query, variables = {}) {
+  const res = await fetch(GRAPHQL, {
+    method: 'POST',
+    headers: { ...HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, variables }),
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`GitHub GraphQL ${res.status} ${res.statusText}\n${text.slice(0, 400)}`);
+  }
+
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error(`GitHub GraphQL returned non-JSON:\n${text.slice(0, 400)}`);
+  }
+
+  if (Array.isArray(json.errors) && json.errors.length) {
+    throw new Error(
+      `GitHub GraphQL errors: ${json.errors.map((e) => e.message).join('; ')}`,
+    );
+  }
+  return json.data;
+}
+
+/**
+ * Settle every promise, then rethrow the first rejection.
+ *
+ * NOT `Promise.all`: that rejects while its siblings are still in flight, and
+ * the resulting `process.exit(1)` tears down undici mid-socket — on Windows
+ * that surfaces as a libuv assertion and exit code 127, which buries the real
+ * error message. Draining first means a failure exits cleanly with 1.
+ */
+async function allOrFirstError(promises) {
+  const settled = await Promise.allSettled(promises);
+  const failed = settled.find((s) => s.status === 'rejected');
+  if (failed) throw failed.reason;
+  return settled.map((s) => s.value);
 }
 
 /** Bounded-parallel map. Keeps us well inside the 5,000/hr REST budget. */
@@ -83,11 +166,38 @@ async function mapPool(items, limit, fn) {
       out[i] = await fn(items[i], i);
     }
   });
-  await Promise.all(workers);
+  await allOrFirstError(workers);
   return out;
 }
 
 // ------------------------------------------------------------ data lookup ---
+
+/**
+ * Total contributions over the trailing 365 days, from the PUBLIC profile
+ * contribution calendar. This is NOT a lifetime commit count: it counts
+ * commits, pull requests, issues, reviews and repository creations, and only
+ * within the last year. The card labels it accordingly.
+ */
+async function fetchContributions(login) {
+  const data = await graphql(
+    `query($login: String!) {
+       user(login: $login) {
+         contributionsCollection {
+           contributionCalendar { totalContributions }
+         }
+       }
+     }`,
+    { login },
+  );
+
+  const total = data?.user?.contributionsCollection?.contributionCalendar?.totalContributions;
+  if (typeof total !== 'number') {
+    throw new Error(
+      `contributionCalendar missing for "${login}" — is the login correct?`,
+    );
+  }
+  return total;
+}
 
 async function listOwnedRepos() {
   const repos = [];
@@ -99,68 +209,35 @@ async function listOwnedRepos() {
     repos.push(...body);
     if (body.length < 100) break;
   }
-  // Forks are somebody else's commits; they would inflate every figure on the card.
+  // Forks are somebody else's work; they would inflate every figure on the card.
   return repos.filter((r) => !r.fork);
-}
-
-/**
- * Commit count + earliest authored date for one repo.
- * Costs at most 2 requests: page 1 (count via Link) then the last page (earliest).
- */
-async function repoCommits(owner, name, login) {
-  const base = `/repos/${owner}/${name}/commits?per_page=1&author=${encodeURIComponent(login)}`;
-
-  // 409 = empty repository. Not an error, just zero commits.
-  const first = await gh(base, { allowStatus: [409, 404] });
-  if (!first.res.ok) return { count: 0, firstCommit: null };
-
-  const items = Array.isArray(first.body) ? first.body : [];
-  const last = lastPageFromLink(first.res.headers.get('link'));
-  const count = last > 0 ? last : items.length;
-  if (count === 0) return { count: 0, firstCommit: null };
-
-  // Oldest commit lives on the final page (the API returns newest-first).
-  let oldest = items[0];
-  if (last > 1) {
-    const tail = await gh(`${base}&page=${last}`, { allowStatus: [409, 404] });
-    if (tail.res.ok && Array.isArray(tail.body) && tail.body.length) oldest = tail.body[0];
-  }
-
-  const iso =
-    oldest?.commit?.author?.date ?? oldest?.commit?.committer?.date ?? null;
-  return { count, firstCommit: iso ? new Date(iso) : null };
 }
 
 async function repoLanguages(owner, name) {
   const { res, body } = await gh(`/repos/${owner}/${name}/languages`, {
-    allowStatus: [404, 409],
+    allowStatus: [403, 404, 409],
   });
   return res.ok && body && typeof body === 'object' ? body : {};
 }
 
+/** Whole days elapsed since FIRST_COMMIT, computed in UTC (no clock drift). */
+function daysBuilding(fromIso) {
+  const start = Date.parse(`${fromIso}T00:00:00Z`);
+  if (!Number.isFinite(start)) throw new Error(`FIRST_COMMIT is not a valid date: ${fromIso}`);
+  return Math.max(1, Math.floor((Date.now() - start) / 86_400_000));
+}
+
 async function collect() {
-  const { body: me } = await gh('/user');
-  const login = me.login;
+  const [contributions, repos] = await allOrFirstError([
+    fetchContributions(PROFILE_LOGIN),
+    listOwnedRepos(),
+  ]);
 
-  const repos = await listOwnedRepos();
-
-  const perRepo = await mapPool(repos, CONCURRENCY, async (r) => {
-    const [commits, languages] = await Promise.all([
-      repoCommits(r.owner.login, r.name, login),
-      repoLanguages(r.owner.login, r.name),
-    ]);
-    return { name: r.name, private: r.private, ...commits, languages };
-  });
-
-  const totalCommits = perRepo.reduce((a, r) => a + r.count, 0);
-
-  const firstDates = perRepo.map((r) => r.firstCommit).filter(Boolean);
-  const earliest = firstDates.length
-    ? new Date(Math.min(...firstDates.map((d) => d.getTime())))
-    : null;
-  const days = earliest
-    ? Math.max(1, Math.floor((Date.now() - earliest.getTime()) / 86_400_000))
-    : 0;
+  const perRepo = await mapPool(repos, CONCURRENCY, async (r) => ({
+    name: r.name,
+    private: r.private,
+    languages: await repoLanguages(r.owner.login, r.name),
+  }));
 
   const bytes = new Map();
   for (const r of perRepo) {
@@ -175,12 +252,10 @@ async function collect() {
     .map(([name, n]) => ({ name, bytes: n, pct: totalBytes ? (n / totalBytes) * 100 : 0 }));
 
   return {
-    login,
-    perRepo: perRepo.sort((a, b) => b.count - a.count),
-    totalCommits,
+    profile: PROFILE_LOGIN,
+    contributions,
     repoCount: perRepo.length,
-    days,
-    earliest,
+    days: daysBuilding(FIRST_COMMIT),
     languages,
     totalBytes,
   };
@@ -205,20 +280,25 @@ const RIGHT_EDGE = BAR_X + BAR_W;
 function buildSvg(data) {
   const generated = new Date().toISOString().slice(0, 10);
 
+  // Honest labels: the big number is a 365-day CONTRIBUTION total, not a
+  // lifetime commit count — the sub-caption says so on the card itself.
   const figures = [
-    { value: group(data.totalCommits), caption: 'COMMITS' },
-    { value: group(data.repoCount), caption: 'REPOSITORIES' },
-    { value: group(data.days), caption: 'DAYS BUILDING' },
+    { value: group(data.contributions), caption: 'CONTRIBUTIONS', note: 'last 365 days' },
+    { value: group(data.repoCount), caption: 'REPOSITORIES', note: 'forks excluded' },
+    { value: group(data.days), caption: 'DAYS BUILDING', note: `since ${FIRST_COMMIT}` },
   ];
 
-  // Left column: three rows across the 52..208 band.
+  // Left column: three rows across the 46..205 band. Pitch 54 buys room for the
+  // sub-caption line; the +27/+41/+51 offsets keep a ~4px gap between a note's
+  // descender and the cap-height of the NEXT row's 34px figure.
   const figureRows = figures
     .map((f, i) => {
-      const top = 52 + i * 52;
+      const top = 46 + i * 54;
       return (
         `<g class="stat f${i}">` +
-        `<text class="fig" x="${LEFT_X}" y="${top + 30}">${escapeXml(f.value)}</text>` +
-        `<text class="cap" x="${LEFT_X}" y="${top + 46}">${escapeXml(f.caption)}</text>` +
+        `<text class="fig" x="${LEFT_X}" y="${top + 27}">${escapeXml(f.value)}</text>` +
+        `<text class="cap" x="${LEFT_X}" y="${top + 41}">${escapeXml(f.caption)}</text>` +
+        `<text class="note" x="${LEFT_X}" y="${top + 51}">${escapeXml(f.note)}</text>` +
         `</g>`
       );
     })
@@ -252,6 +332,7 @@ function buildSvg(data) {
 text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace}
 .fig{font-size:34px;font-weight:600;fill:var(--fg);letter-spacing:-0.02em}
 .cap{font-size:10px;fill:var(--muted);letter-spacing:0.14em}
+.note{font-size:9px;fill:var(--muted);letter-spacing:0.04em;opacity:.85}
 .lang{font-size:12px;fill:var(--fg)}
 .pct{font-size:12px;fill:var(--muted)}
 .foot{font-size:10px;fill:var(--muted);letter-spacing:0.08em}
@@ -266,8 +347,12 @@ ${barDelays}
 @media (prefers-reduced-motion:reduce){.bar,.stat{animation:none}}
 `.trim();
 
+  const title =
+    `${group(data.contributions)} contributions in the last 365 days, ` +
+    `${data.repoCount} repositories, ${data.days} days building`;
+
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="GitHub statistics">
-<title>${group(data.totalCommits)} commits across ${data.repoCount} repositories in ${data.days} days</title>
+<title>${escapeXml(title)}</title>
 <style><![CDATA[
 ${css}
 ]]></style>
@@ -290,16 +375,10 @@ async function main() {
   await writeFile(OUT_FILE, svg, 'utf8');
 
   const bytes = Buffer.byteLength(svg, 'utf8');
-  console.log(`user            ${data.login}`);
+  console.log(`profile         ${data.profile}`);
+  console.log(`contributions   ${group(data.contributions)}  (last 365 days, all activity types)`);
   console.log(`repos           ${data.repoCount} (forks excluded)`);
-  console.log(`commits         ${group(data.totalCommits)}`);
-  console.log(
-    `days building   ${data.days}` +
-      (data.earliest ? `  (first commit ${data.earliest.toISOString().slice(0, 10)})` : ''),
-  );
-  for (const r of data.perRepo) {
-    console.log(`  ${r.name.padEnd(24)} ${String(r.count).padStart(6)}`);
-  }
+  console.log(`days building   ${data.days}  (since ${FIRST_COMMIT})`);
   console.log('languages');
   for (const l of data.languages) {
     console.log(`  ${l.name.padEnd(24)} ${l.pct.toFixed(1)}%  ${group(l.bytes)} bytes`);
