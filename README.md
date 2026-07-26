@@ -14,7 +14,7 @@
 
 **Databases**
 
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white) ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white) ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white) ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white) ![RocksDB](https://img.shields.io/badge/RocksDB-2B303B?style=for-the-badge)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white) ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white) ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white) ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white) ![RocksDB](https://img.shields.io/badge/RocksDB-2B303B?style=for-the-badge&logo=rocksdb&logoColor=white)
 
 **Data**
 
@@ -22,15 +22,15 @@
 
 **Automation and acquisition**
 
-![patchright](https://img.shields.io/badge/patchright-2EAD33?style=for-the-badge) ![camoufox](https://img.shields.io/badge/camoufox-8B4A2B?style=for-the-badge) ![curl__cffi](https://img.shields.io/badge/curl__cffi-073551?style=for-the-badge&logo=curl&logoColor=white) ![crawl4ai](https://img.shields.io/badge/crawl4ai-4B5563?style=for-the-badge) ![BeautifulSoup](https://img.shields.io/badge/BeautifulSoup-3776AB?style=for-the-badge) ![Bright Data](https://img.shields.io/badge/Residential_Proxies-0F62FE?style=for-the-badge)
+![patchright](https://img.shields.io/badge/patchright-2EAD33?style=for-the-badge) ![camoufox](https://img.shields.io/badge/camoufox-8B4A2B?style=for-the-badge&logo=firefoxbrowser&logoColor=white) ![curl__cffi](https://img.shields.io/badge/curl__cffi-073551?style=for-the-badge&logo=curl&logoColor=white) ![crawl4ai](https://img.shields.io/badge/crawl4ai-4B5563?style=for-the-badge&logo=python&logoColor=white) ![BeautifulSoup](https://img.shields.io/badge/BeautifulSoup-3776AB?style=for-the-badge&logo=python&logoColor=white) ![Bright Data](https://img.shields.io/badge/Residential_Proxies-0F62FE?style=for-the-badge)
 
 **AI and agents**
 
-![Anthropic](https://img.shields.io/badge/Anthropic_Claude-D97757?style=for-the-badge&logo=anthropic&logoColor=white) ![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white) ![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white) ![Pydantic](https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white) ![MCP](https://img.shields.io/badge/Model_Context_Protocol-000000?style=for-the-badge)
+![Anthropic](https://img.shields.io/badge/Anthropic_Claude-D97757?style=for-the-badge&logo=anthropic&logoColor=white) ![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white) ![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white) ![Pydantic](https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white) ![MCP](https://img.shields.io/badge/Model_Context_Protocol-000000?style=for-the-badge&logo=modelcontextprotocol&logoColor=white)
 
 **Systems**
 
-![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white) ![Tokio](https://img.shields.io/badge/Tokio-1A1A1A?style=for-the-badge) ![axum](https://img.shields.io/badge/axum-4B5563?style=for-the-badge)
+![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white) ![Tokio](https://img.shields.io/badge/Tokio-1A1A1A?style=for-the-badge&logo=tokio&logoColor=white) ![axum](https://img.shields.io/badge/axum-4B5563?style=for-the-badge&logo=rust&logoColor=white)
 
 **Game development**
 
