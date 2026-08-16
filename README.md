@@ -30,7 +30,7 @@
 
 **Systems**
 
-![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white) ![Tokio](https://img.shields.io/badge/Tokio-1A1A1A?style=for-the-badge&logo=tokio&logoColor=white) ![axum](https://img.shields.io/badge/axum-4B5563?style=for-the-badge)
+![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white) ![Tokio](https://img.shields.io/badge/Tokio-1A1A1A?style=for-the-badge&logo=tokio&logoColor=white) ![axum](https://img.shields.io/badge/axum-4B5563?style=for-the-badge) ![tower](https://img.shields.io/badge/tower-6B7280?style=for-the-badge) ![tracing](https://img.shields.io/badge/tracing-A16207?style=for-the-badge) ![Merkle Trees](https://img.shields.io/badge/Merkle_Trees-3B0764?style=for-the-badge) ![BLAKE3](https://img.shields.io/badge/BLAKE3-0891B2?style=for-the-badge) ![ed25519-dalek](https://img.shields.io/badge/ed25519__dalek-B7410E?style=for-the-badge) ![AES-256-GCM](https://img.shields.io/badge/AES__256__GCM-1F2937?style=for-the-badge) ![ring](https://img.shields.io/badge/ring-7C2D12?style=for-the-badge) ![zeroize](https://img.shields.io/badge/zeroize-374151?style=for-the-badge) ![Envelope Encryption](https://img.shields.io/badge/Envelope_Encryption-065F46?style=for-the-badge) ![Crypto-Shredding](https://img.shields.io/badge/Crypto__Shredding-991B1B?style=for-the-badge) ![Multi-Tenant Isolation](https://img.shields.io/badge/Multi__Tenant_Isolation-1E40AF?style=for-the-badge) ![petgraph](https://img.shields.io/badge/petgraph-4B5563?style=for-the-badge)
 
 **Game development**
 
